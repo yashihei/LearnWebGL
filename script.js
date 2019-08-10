@@ -1,6 +1,6 @@
 onload = function() {
     var c = document.getElementById('canvas');
-    c.width = 300;
+    c.width = 500;
     c.height = 300;
 
     var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
@@ -21,19 +21,30 @@ onload = function() {
     var vertex_position = [
         0.0, 1.0, 0.0,
         1.0, 0.0, 0.0,
-        -1.0, 0.0, 0.0
+        -1.0, 0.0, 0.0,
+        0.0, -1.0, 0.0
     ];
 
     var vertex_color = [
         1.0, 0.0, 0.0, 1.0,
         0.0, 1.0, 0.0, 1.0,
-        0.0, 0.0, 1.0, 1.0
+        0.0, 0.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0
+    ];
+
+    var index = [
+        0, 1, 2,
+        1, 2, 3
     ];
 
     var position_vbo = create_vbo(vertex_position);
     var color_vbo = create_vbo(vertex_color);
 
     set_attribute([position_vbo, color_vbo], attLocation, attStride);
+
+    var ibo = create_ibo(index);
+    
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
 
     var uniLocation = gl.getUniformLocation(prg, 'mvpMatrix');
     
@@ -45,8 +56,8 @@ onload = function() {
     var tmpMatrix = m.identity(m.create());
     var mvpMatrix = m.identity(m.create());
 
-    m.lookAt([0.0, 1.0, 3.0], [0, 0, 0], [0, 1, 0], vMatrix);
-    m.perspective(90, c.width / c.height, 0.1, 100, pMatrix);
+    m.lookAt([0.0, 0.0, 5.0], [0, 0, 0], [0, 1, 0], vMatrix);
+    m.perspective(45, c.width / c.height, 0.1, 100, pMatrix);
     m.multiply(pMatrix, vMatrix, tmpMatrix);
 
     var count = 0;
@@ -60,31 +71,12 @@ onload = function() {
 
         var rad = (count % 360) * Math.PI / 180;
 
-        var x = Math.cos(rad);
-        var y = Math.sin(rad);
         m.identity(mMatrix);
-        m.translate(mMatrix, [x, y + 1.0, 0.0], mMatrix);
-
-        m.multiply(tmpMatrix, mMatrix, mvpMatrix);
-        gl.uniformMatrix4fv(uniLocation, false, mvpMatrix);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-        m.identity(mMatrix);
-        m.translate(mMatrix, [1.0, -1.0, 0.0], mMatrix);
         m.rotate(mMatrix, rad, [0, 1, 0], mMatrix);
-
         m.multiply(tmpMatrix, mMatrix, mvpMatrix);
         gl.uniformMatrix4fv(uniLocation, false, mvpMatrix);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-        var s = Math.sin(rad) + 1.0;
-        m.identity(mMatrix);
-        m.translate(mMatrix, [-1.0, -1.0, 0.0], mMatrix);
-        m.scale(mMatrix, [s, s, 0.0], mMatrix);
-
-        m.multiply(tmpMatrix, mMatrix, mvpMatrix);
-        gl.uniformMatrix4fv(uniLocation, false, mvpMatrix);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
 
         gl.flush();
         
@@ -140,6 +132,14 @@ onload = function() {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         return vbo;
+    }
+
+    function create_ibo(data) {
+        var ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int16Array(data), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+        return ibo;
     }
 
     function set_attribute(vbo, attL, attS) {
