@@ -1,5 +1,6 @@
 onload = function() {
-    var c = document.getElementById('canvas');
+    var c = document.createElement('canvas');
+    this.document.querySelector('body').appendChild(c);
     c.width = 500;
     c.height = 300;
 
