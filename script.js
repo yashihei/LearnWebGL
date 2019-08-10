@@ -18,14 +18,14 @@ onload = function() {
     attStride[0] = 3;
     attStride[1] = 4;
 
-    var vertex_position = [
+    var position = [
         0.0, 1.0, 0.0,
         1.0, 0.0, 0.0,
         -1.0, 0.0, 0.0,
         0.0, -1.0, 0.0
     ];
 
-    var vertex_color = [
+    var color = [
         1.0, 0.0, 0.0, 1.0,
         0.0, 1.0, 0.0, 1.0,
         0.0, 0.0, 1.0, 1.0,
@@ -37,10 +37,10 @@ onload = function() {
         1, 2, 3
     ];
 
-    var position_vbo = create_vbo(vertex_position);
-    var color_vbo = create_vbo(vertex_color);
+    var pos_vbo = create_vbo(position);
+    var col_vbo = create_vbo(color);
 
-    set_attribute([position_vbo, color_vbo], attLocation, attStride);
+    set_attribute([pos_vbo, col_vbo], attLocation, attStride);
 
     var ibo = create_ibo(index);
     
