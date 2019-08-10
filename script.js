@@ -37,13 +37,7 @@ onload = function() {
     var position_vbo = create_vbo(vertex_position);
     var color_vbo = create_vbo(vertex_color);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, position_vbo);
-    gl.enableVertexAttribArray(attLocation[0]);
-    gl.vertexAttribPointer(attLocation[0], attStride[0], gl.FLOAT, false, 0, 0);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_vbo);
-    gl.enableVertexAttribArray(attLocation[1]);
-    gl.vertexAttribPointer(attLocation[1], attStride[1], gl.FLOAT, false, 0, 0);
+    set_attribute([position_vbo, color_vbo], attLocation, attStride);
 
     var uniLocation = gl.getUniformLocation(prg, 'mvpMatrix');
     
@@ -125,5 +119,13 @@ onload = function() {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         return vbo;
+    }
+
+    function set_attribute(vbo, attL, attS) {
+        for (var i in vbo) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, vbo[i]);
+            gl.enableVertexAttribArray(attL[i]);
+            gl.vertexAttribPointer(attL[i], attS[i], gl.FLOAT, false, 0, 0);
+        }
     }
 }
