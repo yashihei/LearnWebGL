@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -w"
+  },
+  "devDependencies": {
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.1",
+    "webpack-cli": "^3.3.6"
+  },
+  "private": true
+}

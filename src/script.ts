@@ -1,3 +1,5 @@
+import { matIV } from "./minMatrix"
+
 onload = function() {
     var c = document.createElement('canvas');
     this.document.querySelector('body').appendChild(c);
@@ -53,7 +55,7 @@ onload = function() {
     gl.depthFunc(gl.LEQUAL);
     gl.enable(gl.CULL_FACE);
 
-    (function() {
+    (function main_loop() {
         gl.clearColor(0.0, 0.0, 1.0, 1.0);
         gl.clearDepth(1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -71,12 +73,12 @@ onload = function() {
 
         gl.flush();
         
-        setTimeout(arguments.callee, 1000 / 30);
+        setTimeout(main_loop, 1000 / 30);
     })();
 
     function create_shader(id) {
         var shader;
-        var scriptElement = document.getElementById(id);
+        var scriptElement = <HTMLScriptElement>document.getElementById(id);
 
         if (!scriptElement) {return;}
 
@@ -176,14 +178,10 @@ onload = function() {
         var n = v * (1 - s * f);
         var k = v * (1 - s * (1 - f));
         var color = new Array();
-        if (!s > 0 && !s < 0) {
-            color.push(v, v, v, a);
-        } else {
-            var r = new Array(v, n, m, m, k, v);
-            var g = new Array(k, v, v, n, m, m);
-            var b = new Array(m, m, k, v, v, n);
-            color.push(r[i], g[i], b[i], a);
-        }
+        var r = new Array(v, n, m, m, k, v);
+        var g = new Array(k, v, v, n, m, m);
+        var b = new Array(m, m, k, v, v, n);
+        color.push(r[i], g[i], b[i], a);
         return color;
     }
 }
