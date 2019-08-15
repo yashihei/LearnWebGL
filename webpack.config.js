@@ -1,12 +1,12 @@
+const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-	mode: 'development',
 	entry: './src/script.ts',
 	devtool: 'inline-source-map',
 
 	output: {
-		path: `${__dirname}/dist`,
+		path: path.resolve(__dirname, 'dist'),
 		filename: 'script.js'
 	},
 
@@ -14,7 +14,8 @@ module.exports = {
 		rules: [
 			{
 				test: /\.ts$/,
-				use: 'ts-loader'
+        use: 'ts-loader',
+        exclude: /node_modules/
 			},
 			{
 				test: /\.pug$/,
@@ -28,7 +29,7 @@ module.exports = {
 		]
 	},
 	resolve: {
-		extensions: ['.ts']
+		extensions: ['.ts', '.js']
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
