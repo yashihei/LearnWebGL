@@ -1,4 +1,4 @@
-import { matIV } from "./minMatrix"
+import { matIV } from './minMatrix'
 
 onload = function() {
   var c = document.createElement('canvas');

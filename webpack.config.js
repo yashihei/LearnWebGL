@@ -1,20 +1,20 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-	mode: "development",
-	entry: "./src/script.ts",
-	devtool: "inline-source-map",
+	mode: 'development',
+	entry: './src/script.ts',
+	devtool: 'inline-source-map',
 
 	output: {
 		path: `${__dirname}/dist`,
-		filename: "script.js"
+		filename: 'script.js'
 	},
 
 	module: {
 		rules: [
 			{
 				test: /\.ts$/,
-				use: "ts-loader"
+				use: 'ts-loader'
 			},
 			{
 				test: /\.pug$/,
@@ -28,11 +28,11 @@ module.exports = {
 		]
 	},
 	resolve: {
-		extensions: [".ts"]
+		extensions: ['.ts']
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			template: "./src/index.pug"
+			template: './src/index.pug'
 		})
 	]
 };
