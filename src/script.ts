@@ -23,28 +23,27 @@ onload = function() {
   attStride[1] = 3;
   attStride[2] = 4;
 
-  var torusData = torus(32, 32, 1.0, 2.0);
-  var position = torusData[0];
-  var normal = torusData[1];
-  var color = torusData[2];
-  var index = torusData[3];
+  var torusData = torus(64, 64, 0.5, 1.5, [0.75, 0.25, 0.25, 1.0]);
+  var tPosition = create_vbo(torusData.p);
+  var tNormal = create_vbo(torusData.n);
+  var tColor = create_vbo(torusData.c);
+  var tVBOList = [tPosition, tNormal, tColor];
+  var tIndex = create_ibo(torusData.i);
 
-  var pos_vbo = create_vbo(position);
-  var nor_vbo = create_vbo(normal);
-  var col_vbo = create_vbo(color);
-
-  set_attribute([pos_vbo, nor_vbo, col_vbo], attLocation, attStride);
-
-  var ibo = create_ibo(index);
-
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  var sphereData = sphere(64, 64, 2.0, [0.25, 0.25, 0.75, 1.0]);
+  var sPosition = create_vbo(sphereData.p);
+  var sNormal = create_vbo(sphereData.n);
+  var sColor = create_vbo(sphereData.c);
+  var sVBOList = [sPosition, sNormal, sColor];
+  var sIndex = create_ibo(sphereData.i);
 
   var uniLocation = new Array();
   uniLocation[0] = gl.getUniformLocation(prg, 'mvpMatrix');
-  uniLocation[1] = gl.getUniformLocation(prg, 'invMatrix');
-  uniLocation[2] = gl.getUniformLocation(prg, 'lightDirection');
-  uniLocation[3] = gl.getUniformLocation(prg, 'eyeDirection');
-  uniLocation[4] = gl.getUniformLocation(prg, 'ambientColor');
+  uniLocation[1] = gl.getUniformLocation(prg, 'mMatrix');
+  uniLocation[2] = gl.getUniformLocation(prg, 'invMatrix');
+  uniLocation[3] = gl.getUniformLocation(prg, 'lightPosition');
+  uniLocation[4] = gl.getUniformLocation(prg, 'eyeDirection');
+  uniLocation[5] = gl.getUniformLocation(prg, 'ambientColor');
 
   var m = new matIV();
 
@@ -77,20 +76,39 @@ onload = function() {
     count++;
 
     var rad = (count % 360) * Math.PI / 180;
+    var tx = Math.cos(rad) * 3.5;
+    var ty = Math.sin(rad) * 3.5;
+    var tz = Math.sin(rad) * 3.5;
+
+    set_attribute(tVBOList, attLocation, attStride);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tIndex);
 
     m.identity(mMatrix);
+    m.translate(mMatrix, [tx, -ty, -tz], mMatrix);
     m.rotate(mMatrix, rad, [0, 1, 1], mMatrix);
     m.multiply(tmpMatrix, mMatrix, mvpMatrix);
-
     m.inverse(mMatrix, invMatrix);
 
     gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
-    gl.uniformMatrix4fv(uniLocation[1], false, invMatrix);
-    gl.uniform3fv(uniLocation[2], lightDirection);
-    gl.uniform3fv(uniLocation[3], eyeDirection);
-    gl.uniform4fv(uniLocation[4], ambientColor);
+    gl.uniformMatrix4fv(uniLocation[1], false, mMatrix);
+    gl.uniformMatrix4fv(uniLocation[2], false, invMatrix);
+    gl.uniform3fv(uniLocation[3], lightDirection);
+    gl.uniform3fv(uniLocation[4], eyeDirection);
+    gl.uniform4fv(uniLocation[5], ambientColor);
+    gl.drawElements(gl.TRIANGLES, torusData.i.length, gl.UNSIGNED_SHORT, 0);
 
-    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+    set_attribute(sVBOList, attLocation, attStride);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sIndex);
+
+    m.identity(mMatrix);
+    m.translate(mMatrix, [-tx, ty, tz], mMatrix);
+    m.multiply(tmpMatrix, mMatrix, mvpMatrix);
+    m.inverse(mMatrix, invMatrix);
+
+    gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
+    gl.uniformMatrix4fv(uniLocation[1], false, mMatrix);
+    gl.uniformMatrix4fv(uniLocation[2], false, invMatrix);
+    gl.drawElements(gl.TRIANGLES, sphereData.i.length, gl.UNSIGNED_SHORT, 0);
 
     gl.flush();
 
@@ -164,7 +182,7 @@ onload = function() {
     }
   }
 
-  function torus(row, column, irad, orad) {
+  function torus(row, column, irad, orad, color) {
     var pos = new Array(), nor = new Array(), col = new Array(), idx = new Array();
     for (var i = 0; i <= row; i++) {
       var r = Math.PI * 2 / row * i;
@@ -177,9 +195,13 @@ onload = function() {
         var tz = (rr * irad + orad) * Math.sin(tr);
         var rx = rr * Math.cos(tr);
         var rz = rr * Math.sin(tr);
+        if (color) {
+          var tc = color;
+        } else {
+          tc = hsva(360 / column * ii, 1, 1, 1);
+        }
         pos.push(tx, ty, tz);
         nor.push(rx, ry, rz);
-        var tc = hsva(360 / column * ii, 1, 1, 1);
         col.push(tc[0], tc[1], tc[2], tc[3]);
       }
     }
@@ -190,7 +212,41 @@ onload = function() {
         idx.push(r + column + 1, r + column + 2, r + 1);
       }
     }
-    return [pos, nor, col, idx];
+    return {p : pos, n : nor, c : col, i : idx};
+  }
+
+  function sphere(row, column, rad, color){
+    var pos = new Array(), nor = new Array(), col = new Array(), idx = new Array();
+    for(var i = 0; i <= row; i++){
+      var r = Math.PI / row * i;
+      var ry = Math.cos(r);
+      var rr = Math.sin(r);
+      for(var ii = 0; ii <= column; ii++){
+        var tr = Math.PI * 2 / column * ii;
+        var tx = rr * rad * Math.cos(tr);
+        var ty = ry * rad;
+        var tz = rr * rad * Math.sin(tr);
+        var rx = rr * Math.cos(tr);
+        var rz = rr * Math.sin(tr);
+        if(color){
+          var tc = color;
+        }else{
+          tc = hsva(360 / row * i, 1, 1, 1);
+        }
+        pos.push(tx, ty, tz);
+        nor.push(rx, ry, rz);
+        col.push(tc[0], tc[1], tc[2], tc[3]);
+      }
+    }
+    r = 0;
+    for(i = 0; i < row; i++){
+      for(ii = 0; ii < column; ii++){
+        r = (column + 1) * i + ii;
+        idx.push(r, r + 1, r + column + 2);
+        idx.push(r, r + column + 2, r + column + 1);
+      }
+    }
+    return {p : pos, n : nor, c : col, i : idx};
   }
 
   function hsva(h, s, v, a) {
