@@ -6,7 +6,7 @@ onload = function() {
   c.width = 500;
   c.height = 300;
 
-  var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+  var gl = c.getContext('webgl');
 
   var v_shader = create_shader('vs');
   var f_shader = create_shader('fs');
