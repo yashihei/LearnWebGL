@@ -1,2 +1,6 @@
-## Memo
-https://scrapbox.io/yashihei/wgld.org%E3%83%A1%E3%83%A2
+```
+npm install
+npm run watch
+npm install http-server -g
+http-server dist/
+```
