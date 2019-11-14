@@ -60,7 +60,8 @@ onload = function() {
 
   var uniLocation = new Array();
   uniLocation[0] = gl.getUniformLocation(prg, 'mvpMatrix');
-  uniLocation[1] = gl.getUniformLocation(prg, 'texture');
+  uniLocation[1] = gl.getUniformLocation(prg, 'texture0');
+  uniLocation[2] = gl.getUniformLocation(prg, 'texture1');
 
   var m = new matIV();
 
@@ -74,9 +75,9 @@ onload = function() {
   m.perspective(45, c.width / c.height, 0.1, 100, pMatrix);
   m.multiply(pMatrix, vMatrix, tmpMatrix);
 
-  gl.activeTexture(gl.TEXTURE0);
-  var texture = null;
-  create_texture('texture.png');
+  var texture0 = null, texture1 = null;
+  create_texture('texture0.png', 0);
+  create_texture('texture1.png', 1);
 
   var count = 0;
 
@@ -92,9 +93,13 @@ onload = function() {
 
     var rad = (count % 360) * Math.PI / 180;
 
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture0);
+    gl.uniform1i(uniLocation[1], 0);
 
-    gl.uniform1f(uniLocation[1], 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture1);
+    gl.uniform1i(uniLocation[2], 1);
 
     m.identity(mMatrix);
     m.rotate(mMatrix, rad, [0, 1, 0], mMatrix);
@@ -175,7 +180,7 @@ onload = function() {
     }
   }
 
-  function create_texture(source) {
+  function create_texture(source, number) {
     var img = new Image();
 
     img.onload = function() {
@@ -184,7 +189,17 @@ onload = function() {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.generateMipmap(gl.TEXTURE_2D);
       gl.bindTexture(gl.TEXTURE_2D, null);
-      texture = tex;
+
+      switch(number) {
+        case 0:
+          texture0 = tex;
+          break;
+        case 1:
+          texture1 = tex;
+          break;
+        default:
+          break;
+      }
     }
     img.src = source;
   }
