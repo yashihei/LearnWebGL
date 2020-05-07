@@ -1,0 +1,15 @@
+head
+  title WebGL TEST
+  script#vs(type='x-shader/x-vertex')
+    include sample.vs
+  script#fs(type='x-shader/x-fragment')
+    include sample.fs
+body
+  p
+    input#transparency(name='blend', type='radio', checked='')
+    |  transparency
+    input#add(name='blend', type='radio')
+    |  add
+  p
+    input#range(type='range', min='0', max='100', value='70')
+    |  vertex alpha value (0% - 100%)
