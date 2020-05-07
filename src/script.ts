@@ -6,6 +6,10 @@ onload = function() {
   c.width = 500;
   c.height = 300;
 
+  var elmTransparency = <HTMLInputElement>document.getElementById('transparency');
+  var elmAdd = <HTMLInputElement>document.getElementById('add');
+  var elmRange = <HTMLInputElement>document.getElementById('range');
+
   var gl = c.getContext('webgl');
 
   var v_shader = create_shader('vs');
@@ -27,13 +31,13 @@ onload = function() {
     -1.0, 1.0, 0.0,
     1.0, 1.0, 0.0,
     -1.0, -1.0, 0.0,
-    1.0, -1.0, 0.1
+    1.0, -1.0, 0.0
   ];
 
   var color = [
-    1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
     1.0, 1.0, 1.0, 1.0
   ];
 
@@ -60,24 +64,24 @@ onload = function() {
 
   var uniLocation = new Array();
   uniLocation[0] = gl.getUniformLocation(prg, 'mvpMatrix');
-  uniLocation[1] = gl.getUniformLocation(prg, 'texture0');
-  uniLocation[2] = gl.getUniformLocation(prg, 'texture1');
+  uniLocation[1] = gl.getUniformLocation(prg, 'vertexAlpha');
+  uniLocation[2] = gl.getUniformLocation(prg, 'texture');
+  uniLocation[3] = gl.getUniformLocation(prg, 'useTexture');
 
   var m = new matIV();
-
   var mMatrix = m.identity(m.create());
   var vMatrix = m.identity(m.create());
   var pMatrix = m.identity(m.create());
   var tmpMatrix = m.identity(m.create());
   var mvpMatrix = m.identity(m.create());
 
-  m.lookAt([0.0, 2.0, 5.0], [0, 0, 0], [0, 1, 0], vMatrix);
+  m.lookAt([0.0, 0.0, 5.0], [0, 0, 0], [0, 1, 0], vMatrix);
   m.perspective(45, c.width / c.height, 0.1, 100, pMatrix);
   m.multiply(pMatrix, vMatrix, tmpMatrix);
 
-  var texture0 = null, texture1 = null;
-  create_texture('texture0.png', 0);
-  create_texture('texture1.png', 1);
+  var texture = null;
+  create_texture('texture.png', 0);
+  gl.activeTexture(gl.TEXTURE0);
 
   var count = 0;
 
@@ -85,27 +89,44 @@ onload = function() {
   gl.depthFunc(gl.LEQUAL);
 
   (function main_loop() {
+    if (elmTransparency.checked) blend_type(0);
+    if (elmAdd.checked) blend_type(1);
+
+    var vertexAlpha = parseFloat(elmRange.value) / 100;
+
     gl.clearColor(0.0, 0.0, 1.0, 1.0);
     gl.clearDepth(1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     count++;
-
     var rad = (count % 360) * Math.PI / 180;
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture0);
-    gl.uniform1i(uniLocation[1], 0);
-
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, texture1);
-    gl.uniform1i(uniLocation[2], 1);
-
     m.identity(mMatrix);
+    m.translate(mMatrix, [0.25, 0.25, -0.25], mMatrix);
     m.rotate(mMatrix, rad, [0, 1, 0], mMatrix);
     m.multiply(tmpMatrix, mMatrix, mvpMatrix);
 
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.disable(gl.BLEND);
+
     gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
+    gl.uniform1f(uniLocation[1], 1.0);
+    gl.uniform1i(uniLocation[2], 0);
+    gl.uniform1i(uniLocation[3], 1); //NOTE: true
+    gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
+
+    m.identity(mMatrix);
+    m.translate(mMatrix, [-0.25, -0.25, 0.25], mMatrix);
+    m.rotate(mMatrix, rad, [0, 0, 1], mMatrix);
+    m.multiply(tmpMatrix, mMatrix, mvpMatrix);
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.enable(gl.BLEND);
+
+    gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
+    gl.uniform1f(uniLocation[1], vertexAlpha);
+    gl.uniform1i(uniLocation[2], 0);
+    gl.uniform1i(uniLocation[3], 0); //NOTE: false
     gl.drawElements(gl.TRIANGLES, index.length, gl.UNSIGNED_SHORT, 0);
 
     gl.flush();
@@ -185,21 +206,19 @@ onload = function() {
 
     img.onload = function() {
       var tex = gl.createTexture();
+
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
       gl.generateMipmap(gl.TEXTURE_2D);
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
       gl.bindTexture(gl.TEXTURE_2D, null);
 
-      switch(number) {
-        case 0:
-          texture0 = tex;
-          break;
-        case 1:
-          texture1 = tex;
-          break;
-        default:
-          break;
-      }
+      texture = tex;
     }
     img.src = source;
   }
@@ -285,5 +304,18 @@ onload = function() {
     var b = new Array(m, m, k, v, v, n);
     color.push(r[i], g[i], b[i], a);
     return color;
+  }
+
+  function blend_type(prm) {
+    switch(prm) {
+      case 0:
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        break;
+      case 1:
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        break;
+      default:
+        break;
+    }
   }
 }
